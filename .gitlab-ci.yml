@@ -1,0 +1,41 @@
+stages:
+  - nexus-validate
+  - nexus-plan
+  - nexus-apply
+
+
+image:
+  name: 10.0.14.79:5009/tools/hashicorp-terraform:light
+  entrypoint:
+    - '/usr/bin/env'
+    - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+
+before_script:
+  - cd test
+  - rm -rf .terraform
+  - terraform --version
+  - terraform init
+nexus-validate:
+
+  stage: nexus-validate
+  script:
+    - terraform validate
+
+nexus-plan:
+  stage: nexus-plan
+  script:
+    - terraform plan -out "nexus-planfile"
+  dependencies:
+    - nexus-validate
+  artifacts:
+    paths:
+      - ./test/nexus-planfile
+nexus-apply:
+
+  stage: nexus-apply
+  script:
+    - terraform apply -input=false "nexus-planfile"
+   #- terraform apply
+  dependencies:
+    - nexus-plan
+  when: manual
